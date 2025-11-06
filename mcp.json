@@ -1,0 +1,261 @@
+{
+  "mcpServers": {
+    "zomato-order-service": {
+      "command": "node",
+      "args": ["./src/server.js"],
+      "env": {
+        "ZOMATO_API_KEY": "${ZOMATO_API_KEY}",
+        "ZOMATO_BASE_URL": "https://developers.zomato.com/api/v2.1"
+      }
+    }
+  },
+  "tools": [
+    {
+      "name": "get_order_details",
+      "description": "Retrieve detailed information about a specific Zomato order",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "order_id": {
+            "type": "string",
+            "description": "Unique identifier for the order"
+          },
+          "user_id": {
+            "type": "string",
+            "description": "User ID associated with the order"
+          },
+          "include_items": {
+            "type": "boolean",
+            "description": "Whether to include detailed item information",
+            "default": true
+          },
+          "include_delivery_details": {
+            "type": "boolean",
+            "description": "Whether to include delivery tracking information",
+            "default": true
+          }
+        },
+        "required": ["order_id"]
+      }
+    },
+    {
+      "name": "get_user_orders",
+      "description": "Retrieve order history for a specific user",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "description": "Unique identifier for the user"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "confirmed", "preparing", "out_for_delivery", "delivered", "cancelled"],
+            "description": "Filter orders by status"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Start date for order history (YYYY-MM-DD)"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date",
+            "description": "End date for order history (YYYY-MM-DD)"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Maximum number of orders to retrieve",
+            "default": 20,
+            "minimum": 1,
+            "maximum": 100
+          },
+          "offset": {
+            "type": "number",
+            "description": "Number of orders to skip for pagination",
+            "default": 0
+          }
+        },
+        "required": ["user_id"]
+      }
+    },
+    {
+      "name": "get_order_tracking",
+      "description": "Get real-time tracking information for an active order",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "order_id": {
+            "type": "string",
+            "description": "Unique identifier for the order"
+          },
+          "include_eta": {
+            "type": "boolean",
+            "description": "Whether to include estimated time of arrival",
+            "default": true
+          },
+          "include_location": {
+            "type": "boolean",
+            "description": "Whether to include delivery partner location",
+            "default": true
+          }
+        },
+        "required": ["order_id"]
+      }
+    },
+    {
+      "name": "search_orders",
+      "description": "Search orders based on various criteria",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "restaurant_name": {
+            "type": "string",
+            "description": "Name of the restaurant to filter by"
+          },
+          "restaurant_id": {
+            "type": "string",
+            "description": "Unique identifier for the restaurant"
+          },
+          "cuisine_type": {
+            "type": "string",
+            "description": "Type of cuisine (e.g., Indian, Chinese, Italian)"
+          },
+          "city": {
+            "type": "string",
+            "description": "City where the order was placed"
+          },
+          "min_amount": {
+            "type": "number",
+            "description": "Minimum order amount to filter by"
+          },
+          "max_amount": {
+            "type": "number",
+            "description": "Maximum order amount to filter by"
+          },
+          "payment_method": {
+            "type": "string",
+            "enum": ["cash", "card", "upi", "wallet"],
+            "description": "Payment method used for the order"
+          },
+          "sort_by": {
+            "type": "string",
+            "enum": ["date", "amount", "rating"],
+            "description": "Field to sort results by",
+            "default": "date"
+          },
+          "sort_order": {
+            "type": "string",
+            "enum": ["asc", "desc"],
+            "description": "Sort order",
+            "default": "desc"
+          }
+        }
+      }
+    },
+    {
+      "name": "get_order_analytics",
+      "description": "Get analytics and insights about orders",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "description": "User ID to get analytics for (optional for admin users)"
+          },
+          "timeframe": {
+            "type": "string",
+            "enum": ["daily", "weekly", "monthly", "yearly"],
+            "description": "Timeframe for analytics",
+            "default": "monthly"
+          },
+          "metrics": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["total_orders", "total_spent", "average_order_value", "favorite_cuisines", "delivery_times", "cancellation_rate"]
+            },
+            "description": "Specific metrics to include in analytics"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Start date for analytics period"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date",
+            "description": "End date for analytics period"
+          }
+        }
+      }
+    }
+  ],
+  "resources": [
+    {
+      "name": "order_schema",
+      "description": "JSON schema for order data structure",
+      "uri": "schema://order.json"
+    },
+    {
+      "name": "restaurant_data",
+      "description": "Restaurant information and menu data",
+      "uri": "data://restaurants.json"
+    },
+    {
+      "name": "user_preferences",
+      "description": "User dining preferences and history",
+      "uri": "data://user_preferences.json"
+    }
+  ],
+  "prompts": [
+    {
+      "name": "order_summary",
+      "description": "Generate a comprehensive order summary",
+      "arguments": [
+        {
+          "name": "order_id",
+          "description": "Order ID to summarize"
+        },
+        {
+          "name": "include_recommendations",
+          "description": "Whether to include future recommendations",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "delivery_update",
+      "description": "Generate delivery status update message",
+      "arguments": [
+        {
+          "name": "order_id",
+          "description": "Order ID for delivery update"
+        },
+        {
+          "name": "customer_name",
+          "description": "Name of the customer"
+        }
+      ]
+    }
+  ],
+  "config": {
+    "api_version": "v2.1",
+    "timeout": 30000,
+    "retry_attempts": 3,
+    "rate_limit": {
+      "requests_per_minute": 100,
+      "burst_limit": 20
+    },
+    "cache": {
+      "enabled": true,
+      "ttl": 300,
+      "max_size": 1000
+    },
+    "logging": {
+      "level": "info",
+      "include_request_body": false,
+      "include_response_body": false
+    }
+  }
+}
